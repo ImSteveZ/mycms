@@ -1,17 +1,24 @@
 package utils
 
 import (
+	"crypto/md5"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"github.com/pborman/uuid"
+	"strings"
 )
 
 // ServeJson write data as the type of json to a http response writer
 // and it returns an error when the json encoding failed.
-func ServeJson(w http.ResponseWriter, data interface{}) error {
+func ServeJson(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(data)
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 // ExtractJson decode a json type http request body to a golang interface{} dst
@@ -34,10 +41,10 @@ func Password(password string) (pwd string, salt string) {
 	return
 }
 
-// Hash return a crypto string whitch is cryptoed from the param password
+// Hash return a crypto string which is crypto from the param password
 // and the param salt
 func Hash(password, salt string) string {
-	return Md5(strings.NewReader(utils.Md5(strings.NewReader(password), true)+salt), true)
+	return Md5(strings.NewReader(Md5(strings.NewReader(password), true)+salt), true)
 }
 
 // Md5 function
