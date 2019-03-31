@@ -9,7 +9,7 @@ import (
 
 const (
 	USERNAME = "root"
-	PASSWORD = "htlmtt01#MYSQL"
+	PASSWORD = "hklmtt01#MYSQL"
 	PROTOCOl = "tcp"
 	HOST     = "localhost"
 	PORT     = "3306"
@@ -45,10 +45,10 @@ func NewModl() (*modl, error) {
 
 // AddOrUpdateUser
 func (modl *modl) AddOrUpdateUser(user *User) (id int64, err error) {
-	addSql := `insert into users (UserName, Email, Password, PasswordSalt, CreatedOn)
-		values (?, ?, ?, ?, ?)
+	addSql := `insert into users (UserName, Email, Password, PasswordSalt, IsApproved, IsLocked, CreatedOn)
+		select ?, ?, ?, ?, ?, ?, ? from dual
 		where not exists (
-			select 1 from users where Email = ?
+			select * from users where Email = ? 
 			and IsDeleted = 0
 		)
 	`
@@ -60,11 +60,15 @@ func (modl *modl) AddOrUpdateUser(user *User) (id int64, err error) {
 	defer stmt.Close()
 	var rst sql.Result
 	createOn := time.Now().Format("2006-01-02 15:04:05")
-	rst, err = stmt.Exec(user.UserName,
+	rst, err = stmt.Exec(
+		user.UserName,
 		user.Email,
 		user.Password,
 		user.PasswordSalt,
+		0,
+		1,
 		createOn,
+		user.Email,
 	)
 	if err != nil {
 		return

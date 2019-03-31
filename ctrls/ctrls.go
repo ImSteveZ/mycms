@@ -87,7 +87,7 @@ func SignUpCtrl(w http.ResponseWriter, r *http.Request) {
 	}
 	// Add user
 	userID, err := userModl.AddOrUpdateUser(user)
-	if err != nil {
+	if err != nil || userID == 0 {
 		result.Status = 400
 		result.Message = "database operation error"
 		utils.ServeJson(w, result)
