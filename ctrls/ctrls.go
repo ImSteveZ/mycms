@@ -17,14 +17,17 @@ func init() { userModl = modls.NewModl(db.DB) }
 
 // SignUpReq is sign up request data struct
 type SignUpReq struct {
-	UserName, Email, Password, RepeatPassword string
+	UserName string `json:"user_name"`
+	Email string `json:"email"`
+	Password string `json:"password"`
+	RepeatPassword string `json:"repeat_password"`
 }
 
 // Resp struct
 type Resp struct {
 	Status  int         `json:"status"`
 	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
 // SignUpValidateData
@@ -40,6 +43,7 @@ type ValidateInfo struct {
 
 // ListUserCtrl
 func ListUserCtrl(w http.ResponseWriter, r *http.Request) {
+	utils.EnterLog(r)
 	var resp *Resp
 	users, err := userModl.ListUsers()
 	// Failed
