@@ -2,49 +2,47 @@ package modls
 
 import (
 	"database/sql"
-	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"time"
 )
 
-const (
-	USERNAME = "root"
-	PASSWORD = "hklmtt01#MYSQL"
-	PROTOCOl = "tcp"
-	HOST     = "localhost"
-	PORT     = "3306"
-	DATABASE = "mycms"
-)
-
-type modl struct {
+type Modl struct {
 	DB *sql.DB
 }
 
 type User struct {
-	ID int64
-	Email string
-	UserName string
-	Password string
+	ID           int64
+	Email        string
+	UserName     string
+	Password     string
 	PasswordSalt string
 }
-	
-func NewModl() (*modl, error) {
-	dsn := fmt.Sprintf(
-		"%s:%s@%s(%s:%s)/%s",
-		USERNAME, PASSWORD, PROTOCOl, HOST, PORT, DATABASE,
-	)
-	db, err := sql.Open("mysql", dsn)
+
+func NewModl(db *sql.DB) *Modl {
+	return &Modl{DB: db}
+}
+
+// ListUser
+func (modl *Modl) ListUsers() ([]*User, error) {
+	listSql := `select ID, UserName, Email from users`
+	rows, err := modl.DB.Query(listSql)
 	if err != nil {
 		return nil, err
 	}
-	db.SetConnMaxLifetime(100 * time.Second) // 最大连接周期，超时即close
-	db.SetMaxOpenConns(100)                  // 最大连接数
-	db.SetMaxIdleConns(16)                   // 最大闲置连接数
-	return &modl{DB: db}, nil
+	defer rows.Close()
+	var users []*User
+	for rows.Next() {
+		user := &User{}
+		err := rows.Scan(user.ID, user.UserName, user.Email)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, nil
 }
 
 // AddOrUpdateUser
-func (modl *modl) AddOrUpdateUser(user *User) (id int64, err error) {
+func (modl *Modl) AddOrUpdateUser(user *User) (id int64, err error) {
 	addSql := `insert into users (UserName, Email, Password, PasswordSalt, IsApproved, IsLocked, CreatedOn)
 		select ?, ?, ?, ?, ?, ?, ? from dual
 		where not exists (
@@ -76,8 +74,8 @@ func (modl *modl) AddOrUpdateUser(user *User) (id int64, err error) {
 	return rst.LastInsertId()
 }
 
-// GetEmailCount 
-//func (modl *modl) GetEmailCount(email string) (count int, err error) {
+// GetEmailCount
+//func (modl *Modl) GetEmailCount(email string) (count int, err error) {
 //	querySql := `select count(1) from users where Email = ?
 //		and IsDeleted = 0`
 //	var stmt *sql.Stmt

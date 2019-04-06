@@ -2,137 +2,164 @@ package ctrls
 
 import (
 	"fmt"
-	"io"
-	"mycms/utils"
+	"mycms/db"
 	"mycms/modls"
+	"mycms/utils"
 	"net/http"
 	"strings"
 )
+
+// Init single modl
+var userModl *modls.Modl
+
+func init() { userModl = modls.NewModl(db.DB) }
 
 // SignUpReq is sign up request data struct
 type SignUpReq struct {
 	UserName, Email, Password, RepeatPassword string
 }
 
-// SginUpResp struct
-type SignUpResp struct {
-	Status int `json:"status"`
-	Message string `json:"message"`
-	Data SignUpData `json:"data"`
+// Resp struct
+type Resp struct {
+	Status  int         `json:"status"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
 }
 
 // SignUpValidateData
 type SignUpData struct {
-	UserID int64 `json:"user_id,omitempty"`
-	ValidateData ValidateData `json:"validate_data,omitempty"`
-}
-
-// ValidateData
-type ValidateData struct {
-	UserName FieldValidate `json:"user_name,omitempty"`
-	Email FieldValidate `json:"email,omitempty"`
-	Password FieldValidate`json:"password,omitempty"`
-	RepeatPassword FieldValidate `json:"repeat_password,omitempty"` 
+	UserID        int64          `json:"user_id,omitempty"`
+	ValidateInfos []ValidateInfo `json:"validate_infos,omitempty"`
 }
 
 // FieldValidate
-type FieldValidate struct {
-	Value, Tip string
+type ValidateInfo struct {
+	Field, Value, Tip string
+}
+
+// ListUserCtrl
+func ListUserCtrl(w http.ResponseWriter, r *http.Request) {
+	var resp *Resp
+	users, err := userModl.ListUsers()
+	// Failed
+	if err != nil {
+		resp = &Resp{
+			Status:  400,
+			Message: "query failed",
+		}
+		utils.ServeJson(w, resp)
+		return
+	}
+	// Success
+	resp = &Resp{
+		Status:  200,
+		Message: "query success",
+		Data:    users,
+	}
+	utils.ServeJson(w, resp)
+	return
 }
 
 // SignUpCtrl
 func SignUpCtrl(w http.ResponseWriter, r *http.Request) {
 	utils.EnterLog(r)
+	var resp *Resp
+
 	// Invalid request method
 	if r.Method != "POST" {
-		result := &SignUpResp{
-			Status: 400,
+		resp = &Resp{
+			Status:  400,
 			Message: fmt.Sprintf("invalid request method: %s", r.Method),
 		}
-		utils.ServeJson(w, result)
-		return
-	}
-	// Extract signUpData
-	var signUpData SignUpReq
-	if err := utils.ExtractJson(r, &signUpData); err != nil && err != io.EOF {
-		w.WriteHeader(http.StatusInternalServerError)
+		utils.ServeJson(w, resp)
 		return
 	}
 
-	// Data validate
-	var result = &SignUpResp{}
-	if validateData, ok := validateSignUpData(signUpData); !ok {
-		result.Status = 300
-		result.Message = "form data is invalid"
-		result.Data.ValidateData = validateData
-		utils.ServeJson(w, result);
+	// Extract request data
+	var signUpData SignUpReq
+	utils.ExtractJson(r, &signUpData)
+
+	// Validate request data
+	if validateInfos, ok := validateSignUpData(signUpData); !ok {
+		resp = &Resp{
+			Status:  300,
+			Message: "form data is invalid",
+			Data: SignUpData{
+				ValidateInfos: validateInfos,
+			},
+		}
+		utils.ServeJson(w, resp)
 		return
 	}
 
 	// User
 	password, passwordSalt := utils.Password(signUpData.Password)
 	user := &modls.User{
-		Email: signUpData.Email,
-		UserName: signUpData.UserName,
-		Password: password,
+		Email:        signUpData.Email,
+		UserName:     signUpData.UserName,
+		Password:     password,
 		PasswordSalt: passwordSalt,
 	}
-	// New user model
-	userModl, err := modls.NewModl()
-	if err != nil {
-		result.Status = 400
-		result.Message = "database connect error"
-		utils.ServeJson(w, result)
-		return
-	}
+
 	// Add user
 	userID, err := userModl.AddOrUpdateUser(user)
 	if err != nil || userID == 0 {
-		result.Status = 400
-		result.Message = "database operation error"
-		utils.ServeJson(w, result)
+		resp = &Resp{
+			Status:  400,
+			Message: "system operation error",
+		}
+		utils.ServeJson(w, resp)
 		return
 	}
-	// Success
-	result.Status = 200
-	result.Message = "register success"
-	result.Data.UserID = userID
-	utils.ServeJson(w, result)
+
+	// Register success
+	resp = &Resp{
+		Status:  200,
+		Message: "register success",
+		Data: SignUpData{
+			UserID: userID,
+		},
+	}
+	utils.ServeJson(w, resp)
 	return
 }
 
-func validateSignUpData(signUpData SignUpReq) (validateData ValidateData, ok bool) {
+func validateSignUpData(signUpData SignUpReq) (validateInfos []ValidateInfo, ok bool) {
 	ok = true
 	// UserName
-	if strlen := len(signUpData.UserName); strlen < 2 || strlen > 10 {
-		validateData.UserName = FieldValidate{
-			Value: signUpData.UserName,
-			Tip: "username's lenth can not less than 2 or more than 10",
-		}
+	if strLen := len(signUpData.UserName); strLen < 2 || strLen > 10 {
+		validateInfos = append(validateInfos, ValidateInfo{
+			"user_name",
+			signUpData.UserName,
+			"username's lenth must between 2 and 10",
+		})
 		ok = false
 	}
 	// Email
 	if !strings.Contains(signUpData.Email, "@") {
-		validateData.Email = FieldValidate{
-			Value: signUpData.Email,
-			Tip: "email's format is invalid, e.g.demo@mycms.com",
-		}
+		validateInfos = append(validateInfos, ValidateInfo{
+			"email",
+			signUpData.Email,
+			"email's format must like 'demo@mycms.com'",
+		})
 		ok = false
 	}
 	// Password
 	if strlen := len(signUpData.Password); strlen < 6 || strlen > 24 {
-		validateData.Password = FieldValidate{
-			Value: signUpData.Password,
-			Tip: "password's lenth can not less than 6 or more than 24",
-		}
+		validateInfos = append(validateInfos, ValidateInfo{
+			"password",
+			signUpData.Password,
+			"password's lenth must between 6 and 24",
+		})
 		ok = false
 	}
 	// RepeatPassword
 	if signUpData.Password != signUpData.RepeatPassword {
-		validateData.RepeatPassword = FieldValidate{
-			Value: signUpData.RepeatPassword,
-			Tip: "two twice password are not equal",
-		}
+		validateInfos = append(validateInfos, ValidateInfo{
+			"repeat_password",
+			signUpData.RepeatPassword,
+			"password and repeat_password must be equal",
+		})
 		ok = false
 	}
 	return

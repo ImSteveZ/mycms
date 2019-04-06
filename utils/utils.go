@@ -4,10 +4,10 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"github.com/pborman/uuid"
 	"io"
 	"log"
 	"net/http"
-	"github.com/pborman/uuid"
 	"strings"
 )
 
@@ -24,8 +24,11 @@ func ServeJson(w http.ResponseWriter, data interface{}) {
 // ExtractJson decode a json type http request body to a golang interface{} dst
 // and to bind the decoded data to this param
 // the dst must be an point.
-func ExtractJson(r *http.Request, dst interface{}) error {
-	return json.NewDecoder(r.Body).Decode(dst)
+func ExtractJson(r *http.Request, dst interface{}) {
+	err := json.NewDecoder(r.Body).Decode(dst)
+	if err != nil && err != io.EOF {
+		panic(err)
+	}
 }
 
 // EnterLog log a base info of a http request

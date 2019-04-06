@@ -1,9 +1,11 @@
-package "db"
+package db
 
 import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"log"
+	"time"
 )
 
 var DB *sql.DB
@@ -12,15 +14,13 @@ const (
 	USERNAME = "root"
 	PASSWORD = "hklmtt01#MYSQL"
 	PROTOCOL = "tcp"
-	HOST = "127.0.0.1"
-	PORT = "3306"
+	HOST     = "127.0.0.1"
+	PORT     = "3306"
 	DATABASE = "mycms"
 )
 
 func init() {
-	dsn := fmt.Sprintf("%s:%s@(%s:%s)/%s",
-		USERNAME, PASSWORD, PROTOCOL, HOST, PORT, DATABASE,
-	)
+	dsn := fmt.Sprintf("%s:%s@(%s:%s)/%s", USERNAME, PASSWORD, PROTOCOL, HOST, PORT, DATABASE)
 	DB, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Printf("database init fail: %v\n", err)
