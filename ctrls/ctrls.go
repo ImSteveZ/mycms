@@ -2,6 +2,7 @@ package ctrls
 
 import (
 	"fmt"
+	"log"
 	"mycms/db"
 	"mycms/modls"
 	"mycms/utils"
@@ -43,6 +44,7 @@ func ListUserCtrl(w http.ResponseWriter, r *http.Request) {
 	users, err := userModl.ListUsers()
 	// Failed
 	if err != nil {
+		log.Printf("list user: %v\n", err)
 		resp = &Resp{
 			Status:  400,
 			Message: "query failed",
@@ -104,6 +106,7 @@ func SignUpCtrl(w http.ResponseWriter, r *http.Request) {
 	// Add user
 	userID, err := userModl.AddOrUpdateUser(user)
 	if err != nil || userID == 0 {
+		log.Printf("add user failed: %v\n", err)
 		resp = &Resp{
 			Status:  400,
 			Message: "system operation error",

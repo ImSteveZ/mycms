@@ -20,10 +20,11 @@ const (
 )
 
 func init() {
-	dsn := fmt.Sprintf("%s:%s@(%s:%s)/%s", USERNAME, PASSWORD, PROTOCOL, HOST, PORT, DATABASE)
-	DB, err := sql.Open("mysql", dsn)
+	dsn := fmt.Sprintf("%s:%s@%s(%s:%s)/%s", USERNAME, PASSWORD, PROTOCOL, HOST, PORT, DATABASE)
+	var err error
+	DB, err = sql.Open("mysql", dsn)
 	if err != nil {
-		log.Printf("database init fail: %v\n", err)
+		log.Printf("database init failed: %v\n", err)
 		return
 	}
 	DB.SetConnMaxLifetime(100 * time.Second)

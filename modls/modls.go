@@ -2,6 +2,7 @@ package modls
 
 import (
 	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
 	"time"
 )
 
@@ -10,11 +11,11 @@ type Modl struct {
 }
 
 type User struct {
-	ID           int64
-	Email        string
-	UserName     string
-	Password     string
-	PasswordSalt string
+	ID           int64 `json:"user_id"`
+	Email        string `json:"email"`
+	UserName     string `json:"user_name"`
+	Password     string `json:"password,omitempty"`
+	PasswordSalt string `json:"password_salt,omitempty"`
 }
 
 func NewModl(db *sql.DB) *Modl {
@@ -23,7 +24,7 @@ func NewModl(db *sql.DB) *Modl {
 
 // ListUser
 func (modl *Modl) ListUsers() ([]*User, error) {
-	listSql := `select ID, UserName, Email from users`
+	listSql := `select ID, UserName, Email from users where 1=1`
 	rows, err := modl.DB.Query(listSql)
 	if err != nil {
 		return nil, err
@@ -31,12 +32,16 @@ func (modl *Modl) ListUsers() ([]*User, error) {
 	defer rows.Close()
 	var users []*User
 	for rows.Next() {
-		user := &User{}
-		err := rows.Scan(user.ID, user.UserName, user.Email)
+		var (
+			id int64
+			userName string
+			email string
+		)
+		err := rows.Scan(&id, &userName, &email)
 		if err != nil {
 			return nil, err
 		}
-		users = append(users, user)
+		users = append(users, &User{ID: id, UserName: userName, Email: email})
 	}
 	return users, nil
 }
