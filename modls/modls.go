@@ -11,7 +11,7 @@ type Modl struct {
 }
 
 type User struct {
-	ID           int64 `json:"user_id"`
+	ID           int64  `json:"user_id"`
 	Email        string `json:"email"`
 	UserName     string `json:"user_name"`
 	Password     string `json:"password,omitempty"`
@@ -33,9 +33,9 @@ func (modl *Modl) ListUsers() ([]*User, error) {
 	var users []*User
 	for rows.Next() {
 		var (
-			id int64
+			id       int64
 			userName string
-			email string
+			email    string
 		)
 		err := rows.Scan(&id, &userName, &email)
 		if err != nil {

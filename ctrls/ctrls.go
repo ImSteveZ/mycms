@@ -17,9 +17,9 @@ func init() { userModl = modls.NewModl(db.DB) }
 
 // SignUpReq is sign up request data struct
 type SignUpReq struct {
-	UserName string `json:"user_name"`
-	Email string `json:"email"`
-	Password string `json:"password"`
+	UserName       string `json:"user_name"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
 	RepeatPassword string `json:"repeat_password"`
 }
 
