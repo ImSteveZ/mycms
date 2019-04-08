@@ -17,6 +17,7 @@ func ServeJson(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(data)
 	if err != nil {
+		log.Printf("serve json failed: %v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
@@ -27,7 +28,7 @@ func ServeJson(w http.ResponseWriter, data interface{}) {
 func ExtractJson(r *http.Request, dst interface{}) {
 	err := json.NewDecoder(r.Body).Decode(dst)
 	if err != nil && err != io.EOF {
-		panic(err)
+		log.Printf("extract json failed: %v\n", err)
 	}
 }
 

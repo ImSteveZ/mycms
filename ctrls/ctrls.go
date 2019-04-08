@@ -43,9 +43,12 @@ type ValidateInfo struct {
 
 // ListUserCtrl
 func ListUserCtrl(w http.ResponseWriter, r *http.Request) {
-	utils.EnterLog(r)
+	// Response
 	var resp *Resp
+
+	// User list
 	users, err := userModl.ListUsers()
+
 	// Failed
 	if err != nil {
 		log.Printf("list user: %v\n", err)
@@ -56,6 +59,7 @@ func ListUserCtrl(w http.ResponseWriter, r *http.Request) {
 		utils.ServeJson(w, resp)
 		return
 	}
+
 	// Success
 	resp = &Resp{
 		Status:  200,
@@ -68,7 +72,7 @@ func ListUserCtrl(w http.ResponseWriter, r *http.Request) {
 
 // SignUpCtrl
 func SignUpCtrl(w http.ResponseWriter, r *http.Request) {
-	utils.EnterLog(r)
+	// Response
 	var resp *Resp
 
 	// Invalid request method
