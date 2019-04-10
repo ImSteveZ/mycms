@@ -17,7 +17,7 @@ func main() {
 	http.HandleFunc("/usr/list", Middleware(ctrls.ListUserCtrl))
 
 	// Listen http server
-	log.Println("server start...")
+	log.Println("server start at 3000...")
 	log.Fatal(http.ListenAndServe(":3000", nil))
 }
 
