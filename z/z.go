@@ -9,20 +9,15 @@ import (
 // 路由map的key格式
 const routerMapKeyFormat = "[%s]%s"
 
-// 处理过程间context传递
-type ZContext struct {
-	W    http.ResponseWriter
-	R    *http.Request
-	Data interface{}
+// 流程上下文接口
+type Ztx interface {
+	Break() bool
 }
 
-// 子过程
-type SubProcedure func(zCtx *ZContext) bool
+// 处理流程
+type Procedure []func(*Ztx)
 
-// 过程
-type Procedure []SubProcedure
-
-// 路由
+// 路由结构
 type Router struct {
 	Pattern                 string    // 匹配路经
 	Methods                 []string  // http方法集
@@ -31,7 +26,7 @@ type Router struct {
 }
 
 // 创建路由
-func NewRouter(pattern string, methods []string, procedure []SubProcedure) *Router {
+func NewRouter(pattern string, methods []string, procedure ...func(*Ztx)) *Router {
 	return &Router{
 		Pattern:   pattern,
 		Methods:   methods,
@@ -111,8 +106,15 @@ func filterMethods(a, b []string) []string {
 	return r
 }
 
+type ZServer struct {
+	Router  *Router
+	Server  *http.Server
+	Context *Ztx
+	Addr    string
+}
+
 // 在传入路由上开启服务
-func Run(r *Router, addr string) {
+func Serve(r *Router, addr string) {
 	rMap := make(map[string]Procedure)
 	log.Println("parsing router...")
 	ParseRouter(r, &rMap)
@@ -136,9 +138,10 @@ func Run(r *Router, addr string) {
 			R: request,
 		}
 		for _, p := range procedure {
-			if !p(zCtx) {
-				return
+			if zCtx.Break {
+				break
 			}
+			p(zCtx)
 		}
 	})
 	log.Printf("starting server on %s...\n", addr)
