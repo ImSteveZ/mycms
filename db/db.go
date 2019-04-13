@@ -12,7 +12,7 @@ var DB *sql.DB
 
 const (
 	USERNAME = "root"
-	PASSWORD = "hklmtt01#MYSQL"
+	PASSWORD = "root"
 	PROTOCOL = "tcp"
 	HOST     = "127.0.0.1"
 	PORT     = "3306"

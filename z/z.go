@@ -7,7 +7,14 @@ import (
 )
 
 // 路由map的key格式
-const routerMapKeyFormat = "[%s]%s"
+const R_MAP_KEY_FMT = "[%s]%s"
+
+// ZServer 结构
+type ZServer struct {
+	Router  *Router
+	Server  *http.Server
+	Context *Ztx
+}
 
 // 流程上下文接口
 type Ztx interface {
@@ -58,7 +65,7 @@ func (r *Router) PushChild(children ...*Router) {
 	}
 }
 
-// 解析路由
+// 解析路由 TODO: goroutine 并发解析
 func ParseRouter(r *Router, target *map[string]Procedure) {
 	log.Println(r.Pattern, r.Methods)
 	if r.FirstChild == nil {
@@ -67,7 +74,7 @@ func ParseRouter(r *Router, target *map[string]Procedure) {
 			return
 		}
 		for _, m := range r.Methods {
-			key := fmt.Sprintf(routerMapKeyFormat, m, r.Pattern)
+			key := fmt.Sprintf(R_MAP_KEY_FMT, m, r.Pattern)
 			(*target)[key] = r.Procedure
 		}
 		return
@@ -106,11 +113,25 @@ func filterMethods(a, b []string) []string {
 	return r
 }
 
-type ZServer struct {
-	Router  *Router
-	Server  *http.Server
-	Context *Ztx
-	Addr    string
+func Start(zserver *ZServer) {
+	routerMap := make(map[string]Procedure)
+	ParseRouter(zserver.Router, routerMap)
+	var zHander http.Handler
+	zHander.ServeHTTP = func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		method := r.Method
+		mPath := fmt.Sprintf(R_MAP_KEY_FMT, method, path)
+		var (
+			procedure Procedure
+			ok bool
+		)
+		if procedure, ok = routerMap[path]; !ok {
+			if procedure, ok = rMap[methodPath]; !ok {
+
+			}
+		}
+	}
+	
 }
 
 // 在传入路由上开启服务
