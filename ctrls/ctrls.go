@@ -6,6 +6,7 @@ import (
 	"mycms/db"
 	"mycms/modls"
 	"mycms/utils"
+	"mygo"
 	"net/http"
 	"strings"
 )
@@ -42,7 +43,7 @@ type ValidateInfo struct {
 }
 
 // ListUserCtrl
-func ListUserCtrl(w http.ResponseWriter, r *http.Request) {
+func ListUserCtrl(c *mygo.Ctx, w http.ResponseWriter, r *http.Request) bool {
 	// Response
 	var resp *Resp
 
@@ -57,7 +58,7 @@ func ListUserCtrl(w http.ResponseWriter, r *http.Request) {
 			Message: "query failed",
 		}
 		utils.ServeJson(w, resp)
-		return
+		return true
 	}
 
 	// Success
@@ -67,11 +68,11 @@ func ListUserCtrl(w http.ResponseWriter, r *http.Request) {
 		Data:    users,
 	}
 	utils.ServeJson(w, resp)
-	return
+	return true
 }
 
 // SignUpCtrl
-func SignUpCtrl(w http.ResponseWriter, r *http.Request) {
+func SignUpCtrl(c *mygo.Ctx, w http.ResponseWriter, r *http.Request) bool {
 	// Response
 	var resp *Resp
 
@@ -82,7 +83,7 @@ func SignUpCtrl(w http.ResponseWriter, r *http.Request) {
 			Message: fmt.Sprintf("invalid request method: %s", r.Method),
 		}
 		utils.ServeJson(w, resp)
-		return
+		return true
 	}
 
 	// Extract request data
@@ -99,7 +100,7 @@ func SignUpCtrl(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 		utils.ServeJson(w, resp)
-		return
+		return true
 	}
 
 	// User
@@ -120,7 +121,7 @@ func SignUpCtrl(w http.ResponseWriter, r *http.Request) {
 			Message: "system operation error",
 		}
 		utils.ServeJson(w, resp)
-		return
+		return true
 	}
 
 	// Register success
@@ -132,7 +133,7 @@ func SignUpCtrl(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	utils.ServeJson(w, resp)
-	return
+	return true
 }
 
 func validateSignUpData(signUpData SignUpReq) (validateInfos []ValidateInfo, ok bool) {

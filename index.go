@@ -4,30 +4,31 @@ import (
 	"log"
 	"mycms/ctrls"
 	"mycms/utils"
+	"mygo"
 	"net/http"
 )
 
 func main() {
+	myx := mygo.NewMyx()
+
 	// Public
-	public := http.FileServer(http.Dir("./public"))
-	http.Handle("/", http.StripPrefix("/", public))
+	myx.ServeFile("/", "./public")
 
 	// Bind handlers to route
-	http.HandleFunc("/usr/signUp", Middleware(ctrls.SignUpCtrl))
-	http.HandleFunc("/usr/list", Middleware(ctrls.ListUserCtrl))
+	myx.HandleFunc("/usr/signUp", EnterLoger, AllowOrigin, ctrls.SignUpCtrl)
+	myx.HandleFunc("/usr/list", EnterLoger, AllowOrigin, ctrls.ListUserCtrl)
 
 	// Listen http server
 	log.Println("server start at 3000...")
-	log.Fatal(http.ListenAndServe(":3000", nil))
+	log.Fatal(http.ListenAndServe(":3000", myx))
 }
 
-// Middleware
-func Middleware(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Log
-		utils.EnterLog(r)
-		// Cross origin
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		next(w, r)
-	}
+func EnterLoger(c *mygo.Ctx, w http.ResponseWriter, r *http.Request) bool {
+	utils.EnterLog(r)
+	return true
+}
+
+func AllowOrigin(c *mygo.Ctx, w http.ResponseWriter, r *http.Request) bool {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	return true
 }
