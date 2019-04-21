@@ -1,26 +1,32 @@
 package main
 
 import (
+	"db"
 	"log"
 	"mycms/ctrls"
 	"mycms/utils"
-	"mygo"
 	"net/http"
+	"nicego"
 )
 
+// CtxKey
+type CtxKey string
+
 func main() {
-	myx := mygo.NewMyx()
+	sqlDB := db.NewDB()
+	defer sqlDB.Close()
 
-	// Public
-	myx.ServeFile("/", "./public")
+	// Route
+	Ctx := context.WithValue(context.Background(), CtxKey("DB"), defaultDB)
+	rt := nicego.NewRoute(ctx)
 
-	// Bind handlers to route
-	myx.HandleFunc("/usr/signUp", EnterLoger, AllowOrigin, ctrls.SignUpCtrl)
-	myx.HandleFunc("/usr/list", EnterLoger, AllowOrigin, ctrls.ListUserCtrl)
+	// Register router
+	rt.From("/").Use(Logger).Static("./public") // static files
+	rt.From("/usr/signUP").Use(Logger, AllowOrigin).Do(ctrls.SignUpCtrl)
+	rt.From("/usr/list").Use(Logger, AllowOrigin).Do(ctrls.ListUserCtrl)
 
-	// Listen http server
-	log.Println("server start at 3000...")
-	log.Fatal(http.ListenAndServe(":3000", myx))
+	// Serve http
+	log.Fatal(http.ListenAndServe(":3000", rt))
 }
 
 func EnterLoger(c *mygo.Ctx, w http.ResponseWriter, r *http.Request) bool {

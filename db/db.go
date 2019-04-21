@@ -8,27 +8,35 @@ import (
 	"time"
 )
 
-var DB *sql.DB
+type DBCtxKey struct{}
 
 const (
-	USERNAME = "root"
-	PASSWORD = "hklmtt01#MYSQL"
-	PROTOCOL = "tcp"
-	HOST     = "127.0.0.1"
-	PORT     = "3306"
-	DATABASE = "mycms"
+	Username     = "root"
+	Password     = "hklmtt01#MYSQL"
+	Protocol     = "tcp"
+	Host         = "127.0.0.1"
+	Port         = "3306"
+	Database     = "mycms"
+	MaxLifeTime  = 100
+	MaxOpenConns = 16
+	MaxIdleConns = 16
 )
 
-func init() {
-	dsn := fmt.Sprintf("%s:%s@%s(%s:%s)/%s", USERNAME, PASSWORD, PROTOCOL, HOST, PORT, DATABASE)
-	var err error
-	DB, err = sql.Open("mysql", dsn)
+func NewMysqlDB() (*sql.DB, error) {
+	dsn := fmt.Sprintf("%s:%s@%s(%s:%s)/%s",
+		Username,
+		Password,
+		Protocol,
+		Host,
+		Port,
+		Database,
+	)
+	mysqlDB, err := sql.Open("mysql", dsn)
 	if err != nil {
-		log.Printf("database init failed: %v\n", err)
-		return
+		panic(fmt.Sprintf("mysql init: %v", err))
 	}
-	DB.SetConnMaxLifetime(100 * time.Second)
-	DB.SetMaxOpenConns(100)
-	DB.SetMaxIdleConns(16)
-	log.Println("database init success...")
+	mysqlDB.SetConnMaxLifetime(MaxLifeTime * time.Second)
+	mysqlDB.SetMaxOpenConns(MaxOpenConns)
+	mysqlDB.SetMaxIdleConns(MaxIdleConns)
+	return mysqlDB, nil
 }

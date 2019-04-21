@@ -6,20 +6,19 @@ import (
 	"time"
 )
 
-type Modl struct {
-	DB *sql.DB
-}
+// Modl
+type Modl struct{ DB *sql.DB }
 
+// NewModl
+func NewModl(db *sql.DB) *Modl { return &Modl{DB: db} }
+
+// User
 type User struct {
 	ID           int64  `json:"user_id"`
 	Email        string `json:"email"`
 	UserName     string `json:"user_name"`
 	Password     string `json:"password,omitempty"`
 	PasswordSalt string `json:"password_salt,omitempty"`
-}
-
-func NewModl(db *sql.DB) *Modl {
-	return &Modl{DB: db}
 }
 
 // ListUser
